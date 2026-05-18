@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<body style="margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh;">
+    <canvas id="stage" width="1024" height="576" style="cursor:pointer; border:2px solid #fff;"></canvas>
+
+    <script>
+        const canvas = document.getElementById('stage');
+        const ctx = canvas.getContext('2d');
+        
+        const scenes = [
+            { index: 0, sentence: "This is a simple Javascript test", textPosition: "middle-center", textAnimation: "typing", media: "https://miro.medium.com/max/1024/1*OK8xc3Ic6EGYg2k6BeGabg.jpeg", duration: 3 },
+            { index: 1, sentence: "Here comes the video!", textPosition: "top-right", textAnimation: "blink", media: "https://media.gettyimages.com/videos/goodlooking-young-woman-in-casual-clothing-is-painting-in-workroomvideo-id1069900546", duration: 5 }
+        ];
+
+        let isPaused = false;
+        let startTime = performance.now();
+        let elapsedAtPause = 0;
+        let lastTime = performance.now();
+
+        const video = document.createElement('video');
+        video.muted = true;
+        video.loop = true;
+
+        canvas.addEventListener('click', () => {
+            isPaused = !isPaused;
+            if (isPaused) {
+                video.pause();
+            } else {
+                video.play();
+            }
+        });
+
+        const imgCache = new Image();
+        imgCache.src = scenes[0].media;
+
+        function render() {
+            if (!isPaused) {
+                const now = performance.now();
+                const deltaTime = (now - lastTime) / 1000;
+                lastTime = now;
+                elapsedAtPause += deltaTime;
+
+                const currentScene = elapsedAtPause < 3 ? scenes[0] : scenes[1];
+                const sceneTime = elapsedAtPause < 3 ? elapsedAtPause : elapsedAtPause - 3;
+
+                ctx.clearRect(0, 0, 1024, 576);
+
+                if (currentScene.index === 0) {
+                    ctx.drawImage(imgCache, 0, 0, 1024, 576);
+                } else {
+                    if (video.src !== currentScene.media) video.src = currentScene.media;
+                    video.play();
+                    ctx.drawImage(video, 0, 0, 1024, 576);
+                }
+
+                ctx.fillStyle = "white";
+                ctx.font = "40px Arial";
+                const x = currentScene.textPosition === "top-right" ? 800 : 512;
+                const y = currentScene.textPosition === "top-right" ? 100 : 288;
+                ctx.textAlign = "center";
+
+                let txt = "";
+                if (currentScene.textAnimation === "typing") {
+                    txt = currentScene.sentence.substring(0, Math.floor(sceneTime * 15));
+                } else if (currentScene.textAnimation === "blink") {
+                    txt = Math.floor(sceneTime * 4) % 2 === 0 ? currentScene.sentence : "";
+                }
+                
+                ctx.fillText(txt, x, y);
+            } else {
+                lastTime = performance.now();
+            }
+
+            if (elapsedAtPause < 8) {
+                requestAnimationFrame(render);
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
